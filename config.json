@@ -284,8 +284,8 @@
     },
     "autoCleanDelay": 30000,
     "updateNotification": {
-        "enable": false,
-        "autoApply": false,
-        "checkIntervalMinutes": 30
+        "enable": true,
+        "autoApply": true,
+        "checkIntervalMinutes": 2
     }
 }
