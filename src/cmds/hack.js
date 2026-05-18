@@ -1,4 +1,5 @@
-const { loadImage, createCanvas } = require("canvas");
+let loadImage, createCanvas;
+try { ({ loadImage, createCanvas } = require("canvas")); } catch (_) {}
 const fs = require("fs-extra");
 const axios = require("axios");
 
@@ -70,6 +71,9 @@ async function hackMessage(api, event, name) {
 
 module.exports.run = async function ({ api, event, args }) {
   try {
+    if (!createCanvas) {
+      return api.sendMessage("❌ Hack command is unavailable on this server (canvas library not supported).", event.threadID, event.messageID);
+    }
     const pathImg = __dirname + "/cache/background.png";
     const pathAvt = __dirname + "/cache/Avtmot.png";
 

@@ -1,4 +1,5 @@
-const { createCanvas, loadImage } = require("canvas");
+let createCanvas, loadImage;
+try { ({ createCanvas, loadImage } = require("canvas")); } catch (_) {}
 const fs    = require("fs");
 const path  = require("path");
 const axios = require("axios");
@@ -450,6 +451,10 @@ async function buildCard(avatarImg) {
 ════════════════════════════════════════════════ */
 module.exports.run = async function ({ api, event }) {
   try {
+    if (!createCanvas) {
+      const info = `👑 OWNER INFORMATION\n\n👤 Name: ${OWNER.name}\n🎂 Age: ${OWNER.age}\n🌍 Country: ${OWNER.country}\n📍 City: ${OWNER.city}\n📘 Facebook: ${OWNER.facebook}\n📧 Gmail: ${OWNER.gmail}\n💞 Relationship: ${OWNER.relationship}\n🎮 Hobby: ${OWNER.hobby}\n💼 Profession: ${OWNER.profession}\n🤖 Bot: ${OWNER.botName} ${OWNER.botVersion}`;
+      return api.sendMessage(info, event.threadID, event.messageID);
+    }
     const avatarImg = await loadAvatar(OWNER.uid);
     const buf       = await buildCard(avatarImg);
     const tmpPath   = path.join(__dirname, `owner_${Date.now()}.png`);
