@@ -182,33 +182,62 @@ module.exports.run = async function ({ api, event, args, Users, permssion }) {
         return api.sendMessage(box("🔐 DENIED", "│\n│  ⚡ Superadmin+ required to remove roles."), threadID, messageID);
       }
 
+      const levelArg = parseInt(args[1]);
+      const hasSpecificLevel = !isNaN(levelArg) && levelArg >= 2 && levelArg <= 6;
+      const specificKey = hasSpecificLevel ? ROLE_KEYS[levelArg] : null;
+
       const targets = getTargets();
       if (!targets.length) {
-        return api.sendMessage(box("⚠️ ERROR", "│\n│  Tag someone, reply, or provide a UID."), threadID, messageID);
+        return api.sendMessage(
+          box("⚠️ USAGE", [
+            "│",
+            "│  role remove @tag/reply      → সব role সরাও",
+            "│  role remove 2 @tag/reply    → শুধু Bot Admin সরাও",
+            "│  role remove 3 @tag/reply    → শুধু Superadmin সরাও",
+            "│  role remove 4 @tag/reply    → শুধু Premium সরাও",
+            "│  role remove 5 @tag/reply    → শুধু Dev সরাও",
+            "│  role remove 6 @tag/reply    → শুধু VIP সরাও",
+            "│"
+          ].join("\n")),
+          threadID, messageID
+        );
       }
 
       const removed = [], skipped = [];
 
       for (const id of targets) {
         const currentLevel = getUserRole(id);
-        if (currentLevel === 0) {
-          const name = await getName(id);
-          skipped.push(`${name} has no role`);
-          continue;
-        }
-        if (currentLevel >= 5 && permssion < 5) {
-          const name = await getName(id);
-          skipped.push(`${name} is ${ROLE_NAMES[currentLevel]} — need Dev+ to remove`);
-          continue;
-        }
-        let wasRemoved = false;
-        for (const key of Object.values(ROLE_KEYS)) {
-          const idx = config[key].indexOf(id);
-          if (idx !== -1) { config[key].splice(idx, 1); wasRemoved = true; }
-        }
-        if (wasRemoved) {
-          const name = await getName(id);
-          removed.push(`${ROLE_NAMES[currentLevel]} removed → ${name} (${id}) → 👤 User`);
+        const name = await getName(id);
+
+        if (hasSpecificLevel) {
+          if (!config[specificKey] || !config[specificKey].includes(id)) {
+            skipped.push(`${name} is not ${ROLE_NAMES[levelArg]}`);
+            continue;
+          }
+          if (levelArg >= 5 && permssion < 5) {
+            skipped.push(`${name} is ${ROLE_NAMES[levelArg]} — need 🛠️ Dev+ to remove`);
+            continue;
+          }
+          const idx = config[specificKey].indexOf(id);
+          if (idx !== -1) config[specificKey].splice(idx, 1);
+          removed.push(`${ROLE_NAMES[levelArg]} removed → ${name} (${id})`);
+        } else {
+          if (currentLevel === 0) {
+            skipped.push(`${name} has no role`);
+            continue;
+          }
+          if (currentLevel >= 5 && permssion < 5) {
+            skipped.push(`${name} is ${ROLE_NAMES[currentLevel]} — need 🛠️ Dev+ to remove`);
+            continue;
+          }
+          let wasRemoved = false;
+          for (const key of Object.values(ROLE_KEYS)) {
+            const idx = config[key].indexOf(id);
+            if (idx !== -1) { config[key].splice(idx, 1); wasRemoved = true; }
+          }
+          if (wasRemoved) {
+            removed.push(`All roles removed → ${name} (${id}) → 👤 User`);
+          }
         }
       }
 
@@ -217,6 +246,7 @@ module.exports.run = async function ({ api, event, args, Users, permssion }) {
       let body = "│\n";
       if (removed.length) body += `│  ✅ Removed:\n${removed.map(l => `│    • ${l}`).join("\n")}\n│\n`;
       if (skipped.length) body += `│  ⚠️ Skipped:\n${skipped.map(l => `│    • ${l}`).join("\n")}\n│\n`;
+      if (!removed.length && !skipped.length) body += "│  No changes made.\n│\n";
 
       return api.sendMessage(box("❌ ROLE REMOVED", body.trimEnd()), threadID, messageID);
     }
